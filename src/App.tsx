@@ -104,7 +104,7 @@ export function App() {
       <header className="app-header">
         <h1 className="app-title">
           argos
-          <span className="app-title-sub">議論可視化</span>
+          <span className="app-title-sub">See every angle</span>
         </h1>
 
         <div className="toolbar-spacer" />

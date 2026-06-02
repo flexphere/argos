@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "argos",
-  description: "議論可視化",
+  title: "argos — See every angle",
+  description: "See every angle — visualize meeting discussions as IBIS argument graphs.",
 }
 
 export default function RootLayout({
