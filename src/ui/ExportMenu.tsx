@@ -1,29 +1,11 @@
 import { useEffect, useRef, useState } from "react"
+import { downloadGraphAsPng } from "../io/imageExport"
 import { buildExportRoot, defaultFilename, downloadJson } from "../io/jsonIO"
-import { graphToMarkdown } from "../io/markdown"
 import { useGraphStore } from "../store/graphStore"
-
-function downloadText(text: string, filename: string, mime: string) {
-  const blob = new Blob([text], { type: mime })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-}
-
-function timestampedName(ext: string): string {
-  const now = new Date()
-  const pad = (n: number) => String(n).padStart(2, "0")
-  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`
-  return `argos-${stamp}.${ext}`
-}
 
 export function ExportMenu() {
   const [open, setOpen] = useState(false)
+  const [exportingPng, setExportingPng] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -48,10 +30,16 @@ export function ExportMenu() {
     setOpen(false)
   }
 
-  const handleMarkdown = () => {
-    const graph = useGraphStore.getState().graph
-    downloadText(graphToMarkdown(graph), timestampedName("md"), "text/markdown")
-    setOpen(false)
+  const handlePng = async () => {
+    setExportingPng(true)
+    try {
+      await downloadGraphAsPng()
+      setOpen(false)
+    } catch (e) {
+      console.error("PNG 出力に失敗しました:", e)
+    } finally {
+      setExportingPng(false)
+    }
   }
 
   return (
@@ -74,11 +62,16 @@ export function ExportMenu() {
               <div className="export-menu-desc">完全データ・再インポート可</div>
             </span>
           </button>
-          <button type="button" className="export-menu-item" onClick={handleMarkdown}>
-            <span className="export-menu-icon">📄</span>
+          <button
+            type="button"
+            className="export-menu-item"
+            onClick={handlePng}
+            disabled={exportingPng}
+          >
+            <span className="export-menu-icon">🖼️</span>
             <span>
-              <div className="export-menu-name">Markdown (.md)</div>
-              <div className="export-menu-desc">議事録レポート・Mermaid 埋込み</div>
+              <div className="export-menu-name">PNG{exportingPng ? " (生成中...)" : ""}</div>
+              <div className="export-menu-desc">高解像度 (2x) / ズームしても文字が潰れない</div>
             </span>
           </button>
         </div>
