@@ -1,6 +1,6 @@
-# 意味分析指示 (semantic analysis)
+# 分析指示 (semantic analysis)
 
-このドキュメントは、argos skill の **意味分析ステップ** (任意) で agent が従う指示と JSON スキーマを self-contained に記述したもの。
+このドキュメントは、argos skill の **分析ステップ** (任意) で agent が従う指示と JSON スキーマを self-contained に記述したもの。
 SKILL.md の Step 7 から参照される。
 
 ## 前提

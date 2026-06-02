@@ -7,7 +7,7 @@ description: Visualize a Notion AI Meeting Notes page as an argos argument graph
 
 ## このスキルの役割
 
-ユーザーが指定した Notion ページからトランスクリプトを取得し、**親 Claude Code セッション (= あなた) が直接 in-context で抽出と意味分析を行う**。結果 JSON を argos の静的アセット (`extractions/<page-id>.json`) に書き出し、ユーザーはブラウザの **Import → JSON ファイルから** で読み込む。
+ユーザーが指定した Notion ページからトランスクリプトを取得し、**親 Claude Code セッション (= あなた) が直接 in-context で抽出と分析を行う**。結果 JSON を argos の静的アセット (`extractions/<page-id>.json`) に書き出し、ユーザーはブラウザの **Import → JSON ファイルから** で読み込む。
 
 **責務分割**:
 - **Claude Code (skill, このセッション)**: Notion 取得 (MCP) → transcript 抽出 → **in-context で ExtractionResult / SemanticAnalysisResult を生成** → 保存スクリプトで zod 検証 + 書き出し
@@ -71,14 +71,14 @@ node "${CLAUDE_PLUGIN_ROOT}/.claude/skills/argos/scripts/extract-transcript.mjs"
 
 ただし **(1) が前提**。タグを残した raw を渡すのが最も確実。
 
-### Step 5: ユーザーに意味分析の要否を確認
+### Step 5: ユーザーに分析の要否を確認
 
-抽出のたびに **意味分析も同時実行するか**ユーザーに聞く。
+抽出のたびに **分析も同時実行するか**ユーザーに聞く。
 
-- **Yes**: 抽出後に意味分析を 1 回実行。論点ズレ・接続先見直し候補がグラフに焼き込まれる。
+- **Yes**: 抽出後に分析を 1 回実行。論点ズレ・接続先見直し候補がグラフに焼き込まれる。
 - **No**: 抽出のみ。あとから生成し直したい場合は再度スキルを呼ぶ。
 
-ユーザー回答に応じて Step 7 (意味分析) をスキップするか決める。
+ユーザー回答に応じて Step 7 (分析) をスキップするか決める。
 
 ### Step 6: in-context 抽出 → out/extraction-<page_id>.raw.json
 
@@ -97,7 +97,7 @@ node "${CLAUDE_PLUGIN_ROOT}/.claude/skills/argos/scripts/extract-transcript.mjs"
 
 このステップで LLM 推論を行うのは **このセッション (= あなた) 自身**。追加のサブプロセスや API キーは不要。
 
-### Step 7 (任意): in-context 意味分析 → out/semantic-<page_id>.raw.json
+### Step 7 (任意): in-context 分析 → out/semantic-<page_id>.raw.json
 
 Step 5 で **Yes** を選んだ場合のみ実行。
 
@@ -153,7 +153,7 @@ Page ID: <page_id>
   - Issues: <n>
   - Claims: <m>
   - Arguments: <k>
-意味分析: <yes / skipped>
+分析: <yes / skipped>
   (yes の場合) drift=<a> misplaced=<b>
 
 出力ファイル:

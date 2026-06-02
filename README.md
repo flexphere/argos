@@ -9,7 +9,7 @@
 - 議論を **Issue / Claim / Argument / Criterion / Reference** として構造化
 - グラフから「議論の穴」を自動検出
   - 未根拠の主張 / 未応答の反論 / 評価基準の不一致
-  - 論点ズレ / 接続先見直し候補（skill 側で意味分析を回した場合）
+  - 論点ズレ / 接続先見直し候補（skill 側で分析を回した場合）
   - 採用検討の余地あり / 代替案が同時 agreed 等
 - ブラウザは **LLM・API サーバーに依存しない**（完全静的、GitHub Pages / S3 / GCS 等にデプロイ可）
 
@@ -51,7 +51,7 @@ skill が以下を実行:
 
 1. Notion から MCP 経由で transcript を取得
 2. **親 Claude Code セッションが in-context で構造化** (LLM 推論はサブスク範囲内、`claude -p` 等のサブプロセス不要)
-3. 任意で意味分析（論点ズレ / 接続先見直し候補）を同セッションで生成
+3. 任意で分析（論点ズレ / 接続先見直し候補）を同セッションで生成
 4. zod 検証 + cwd 直下の `extractions/<page-id>.json` に保存
 
 生成された JSON をホスト版ブラウザの **Import → JSON ファイルから** で開く。

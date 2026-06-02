@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 /**
- * 意味分析 (改善提案) の結果スキーマ。
+ * 分析 (改善提案) の結果スキーマ。
  *
  * フィールド内の *Ref は ExtractionResult.ref ベース (人間可読 ID)。skill 側で
  * agent が in-context 生成した JSON を `scripts/save-fixture.ts` がこのスキーマで

@@ -1,4 +1,4 @@
-// Skill 用 CLI: agent が in-context で生成した抽出結果 (+任意で意味分析) JSON を
+// Skill 用 CLI: agent が in-context で生成した抽出結果 (+任意で分析) JSON を
 // zod 検証し、ブラウザ用 fixture (`extractions/<page-id>.json`) に保存する。
 //
 // このファイルは esbuild で `.claude/skills/argos/scripts/save-fixture.mjs` に
