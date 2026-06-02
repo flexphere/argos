@@ -1,0 +1,28 @@
+node_modules
+dist
+.DS_Store
+*.log
+.env
+.env.local
+.env.*.local
+.vscode/*
+!.vscode/extensions.json
+coverage
+test-results
+playwright-report
+blob-report
+
+# Next.js
+.next
+out
+next-env.d.ts
+
+# Skill が書き出す抽出結果 JSON (ローカル成果物)。
+# デモ用に共有したい場合は強制 add する。
+/extractions/
+
+# Logs
+*.tsbuildinfo
+
+# Use pnpm-lock.yaml only (this project uses pnpm)
+package-lock.json

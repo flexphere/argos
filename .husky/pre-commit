@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+# pre-commit hook (ADR-0003 Harness Phase 1-D)
+#
+# 役割:
+#   1. lint-staged で staged な .ts/.tsx に対して biome check --apply (自動修正)
+#   2. プロジェクト全体の tsc --noEmit で型エラーがないか確認
+#
+# 失敗時は commit がブロックされる。
+# テスト実行はここに含めない (時間がかかり過ぎるため CI 側で対応)。
+
+set -e
+
+echo "[husky] running lint-staged..."
+npx lint-staged
+
+echo "[husky] running tsc --noEmit..."
+npx tsc --noEmit
+
+echo "[husky] pre-commit checks passed."

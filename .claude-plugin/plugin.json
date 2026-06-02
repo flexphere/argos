@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "argos",
+  "displayName": "Argos",
+  "version": "0.1.0",
+  "description": "Notion meeting transcripts → IBIS/Toulmin discussion graph fixtures for the Argos visualizer.",
+  "author": {
+    "name": "flexphere",
+    "url": "https://github.com/flexphere"
+  },
+  "homepage": "https://github.com/flexphere/argos",
+  "repository": "https://github.com/flexphere/argos",
+  "keywords": ["meeting-notes", "notion", "ibis", "toulmin", "argumentation", "visualization"],
+  "skills": [".claude/skills"]
+}

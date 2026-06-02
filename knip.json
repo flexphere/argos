@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "app/**/{page,layout,route}.{ts,tsx}",
+    "src/App.tsx",
+    "tests/**/*.test.ts",
+    "e2e/**/*.spec.ts",
+    ".claude/skills/**/scripts/*.mjs"
+  ],
+  "project": ["src/**/*.{ts,tsx}", "app/**/*.{ts,tsx}", "tests/**/*.ts", "e2e/**/*.ts"],
+  "ignoreExportsUsedInFile": true
+}

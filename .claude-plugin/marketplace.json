@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "argos",
+  "description": "Argos plugin distribution (self-hosted marketplace).",
+  "owner": {
+    "name": "flexphere"
+  },
+  "plugins": [
+    {
+      "name": "argos",
+      "source": "./",
+      "description": "Notion meeting transcripts → IBIS/Toulmin discussion graph fixtures for the Argos visualizer.",
+      "category": "productivity",
+      "tags": ["meeting-notes", "notion", "argumentation"]
+    }
+  ]
+}
