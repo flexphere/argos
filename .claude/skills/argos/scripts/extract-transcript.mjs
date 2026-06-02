@@ -67,24 +67,36 @@ function cleanText(s) {
     .join("\n")
 }
 
+// 入力の形式を判定して transcript を取り出す。
+//   1. <meeting-notes> ブロックあり (= MCP raw レスポンス)
+//   2. <transcript> ブロックだけある (= meeting-notes ラッパーを剥がされた中間形)
+//   3. どちらも無い (= agent が既に整形済みの transcript テキストを渡してきた)
+//      → そのまま transcript として使う (best-effort fallback)
 const mn = extractMeetingNotes(source)
-if (!mn) {
+let summary = null
+let transcript = null
+if (mn) {
+  summary = mn.summary
+  transcript = mn.transcript
+} else {
+  // case 2: <transcript> 単独
+  transcript = extractSection(source, "transcript")
+  // case 3: タグ無し → そのまま透過
+  if (transcript === null) transcript = source
+}
+
+if (!transcript || transcript.trim().length === 0) {
   console.error(
-    "meeting-notes ブロックが見つかりません。AI Meeting Notes 録音を含むページを指定してください",
+    "transcript が空です。録音前/処理中の Notion ページか、入力ファイルが空かを確認してください",
   )
   process.exit(2)
 }
 
-if (!mn.transcript || mn.transcript.trim().length === 0) {
-  console.error("transcript セクションが空です（録音前 or 文字起こし処理中の可能性）")
-  process.exit(3)
-}
-
 const parts = []
-if (args.includeSummary && mn.summary) {
-  parts.push(`# Summary\n\n${cleanText(mn.summary)}`)
+if (args.includeSummary && summary) {
+  parts.push(`# Summary\n\n${cleanText(summary)}`)
 }
-parts.push(`# Transcript\n\n${cleanText(mn.transcript)}`)
+parts.push(`# Transcript\n\n${cleanText(transcript)}`)
 
 if (args.includeManual) {
   // <content> 内部に限定し meeting-notes を除く。

@@ -49,17 +49,27 @@ mkdir -p out extractions
 { "id": "<URL or page_id>", "include_transcript": true }
 ```
 
-レスポンスは markdown 風テキストで `<meeting-notes>` `<transcript>` 等を含む。大きい場合 (>70K 字程度) は Claude Code が tool-results ファイルに退避する。
+レスポンスは markdown 風テキストで `<meeting-notes>` `<transcript>` 等のタグを含む。
+
+**保存ルール (重要)**: レスポンスを `out/raw-<page_id>.txt` に **そのまま (verbatim) 保存** する。`<meeting-notes>` `<transcript>` 等のラッパータグも消さない。Step 4 のスクリプトがこれらのタグを目印に transcript を抽出するため。
+
+- レスポンスが大きく (>70K 字程度) tool-results ファイルに自動退避された場合: その path をそのまま Step 4 の `--input` に渡す (再書き出し不要)
+- インラインで返ってきた場合: そのまま Write ツールで `out/raw-<page_id>.txt` に保存
 
 ### Step 4: Transcript を取り出す
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/.claude/skills/argos/scripts/extract-transcript.mjs" \
-  --input <MCPレスポンスファイル> \
+  --input <MCPレスポンスファイル または raw-<page_id>.txt> \
   --output out/transcript-<page_id>.txt
 ```
 
-`<transcript>` セクションだけを整形抽出する。
+`<transcript>` セクションを整形抽出する。スクリプトは以下を順に試すフォールバック付き:
+1. `<meeting-notes><transcript>...</transcript></meeting-notes>` (= MCP raw)
+2. `<transcript>...</transcript>` 単独
+3. タグ無しテキスト → そのまま transcript として透過
+
+ただし **(1) が前提**。タグを残した raw を渡すのが最も確実。
 
 ### Step 5: ユーザーに意味分析の要否を確認
 
