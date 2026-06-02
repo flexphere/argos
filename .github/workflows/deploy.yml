@@ -44,6 +44,9 @@ jobs:
       - run: touch out/.nojekyll
 
       - uses: actions/configure-pages@v5
+        with:
+          # Pages が repo 設定で未有効でもワークフローから自動有効化する
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
