@@ -11,5 +11,5 @@
   "homepage": "https://github.com/flexphere/argos",
   "repository": "https://github.com/flexphere/argos",
   "keywords": ["meeting-notes", "notion", "ibis", "toulmin", "argumentation", "visualization"],
-  "skills": [".claude/skills"]
+  "skills": ["./.claude/skills/"]
 }
