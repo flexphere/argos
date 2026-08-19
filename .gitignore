@@ -12,10 +12,9 @@ test-results
 playwright-report
 blob-report
 
-# Next.js
-.next
-out
-next-env.d.ts
+# Skill の作業用中間ファイル (raw / transcript / 生成前 JSON)。
+# ビルド出力ではない (.claude/skills/argos/SKILL.md 参照)。
+/out/
 
 # Skill が書き出す抽出結果 JSON (ローカル成果物)。
 # デモ用に共有したい場合は強制 add する。

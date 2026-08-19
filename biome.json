@@ -10,13 +10,10 @@
     "ignore": [
       "dist",
       "node_modules",
-      ".next",
-      "next-env.d.ts",
       "coverage",
       "playwright-report",
       "test-results",
       "blob-report",
-      "out",
       ".claude/skills/argos/scripts/save-fixture.mjs"
     ]
   },

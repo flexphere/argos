@@ -1,7 +1,7 @@
 import { ReactFlowProvider } from "@xyflow/react"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
-import "../app/globals.css"
+import "./globals.css"
 import { App } from "./App"
 import { useGraphStore } from "./store/graphStore"
 import { useUIStore } from "./store/uiStore"
