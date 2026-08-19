@@ -21,8 +21,6 @@ jobs:
     env:
       # husky の prepare スクリプトを CI でスキップ (git hook は CI に不要)
       HUSKY: "0"
-      # GitHub Pages 上は `<user>.github.io/argos/` で配信されるため basePath を付ける
-      NEXT_PUBLIC_BASE_PATH: /argos
     steps:
       - uses: actions/checkout@v4
 
@@ -37,11 +35,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # 成果物は dist/index.html 1 枚のみ。アセットが外部ファイルに分かれないため
+      # basePath 指定も .nojekyll も不要 (docs/adr/0001-vite-singlefile-html.md)
       - run: pnpm build
-
-      # Next.js が出力する `_next/` を GitHub Pages の Jekyll パイプラインが
-      # 弾かないよう .nojekyll を置く
-      - run: touch out/.nojekyll
 
       - uses: actions/configure-pages@v5
         with:
@@ -50,7 +46,7 @@ jobs:
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: ./out
+          path: ./dist
 
   deploy:
     needs: build
