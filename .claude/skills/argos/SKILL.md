@@ -21,7 +21,7 @@ LLM 推論はすべて親セッション内で完結するので、`claude -p` �
 
 - `claude.ai` の Notion インテグレーションが対象ワークスペースで Approved されている (`mcp__claude_ai_Notion__notion-fetch` が動く)
 - Node.js 22+ が PATH に存在する (scripts は self-contained ESM バンドルのため追加依存インストールは不要)
-- argos ブラウザアプリが開いていること (static export を任意の方法で配信、または開発時は `pnpm dev`)
+- argos ブラウザアプリが開いていること (ホスト版、`pnpm build` が出す `dist/index.html` を直接開く、または開発時は `pnpm dev`)
 
 ## 実行ステップ
 

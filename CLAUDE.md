@@ -36,13 +36,13 @@ IBIS 系の Issue / Claim / Argument に Criterion / Reference を追加した�
 ## 3. アーキテクチャ概観
 
 ```
-app/                       Next.js App Router (静的 export)
-├── layout.tsx
-├── page.tsx
-└── globals.css
+index.html                 Vite のエントリ HTML (title/meta はここに直書き)
+vite.config.ts             plugin-react + vite-plugin-singlefile
 
 src/                       アプリ本体
+├── main.tsx               mount エントリ (ReactFlowProvider + App)
 ├── App.tsx                ルートコンポーネント
+├── globals.css            全体スタイル (Catppuccin semantic token)
 ├── schema/                ドメイン型・zod スキーマ
 ├── graph/                 React Flow 周辺 (layout/customNodes/GraphCanvas)
 ├── store/                 Zustand ストア (graphStore + uiStore)
@@ -71,6 +71,8 @@ docs/
 ├── plan/                  未着手プラン
 └── research/              調査・分析
 ```
+
+ビルド成果物は `dist/index.html` **1 ファイルのみ**。`vite-plugin-singlefile` が JS/CSS を全て HTML にインライン化するため外部アセット参照が発生せず、`file://` でもサブパス配下でもそのまま開ける（経緯は [`docs/adr/0001-vite-singlefile-html.md`](./docs/adr/0001-vite-singlefile-html.md)）。
 
 ### 依存方向（機械検証あり）
 
@@ -128,8 +130,9 @@ LLM 推論ロジックを保持する `src/llm/` モジュールは存在しな�
 
 | コマンド | 用途 |
 |---|---|
-| `pnpm dev` | 開発サーバ起動 (`http://localhost:3000`) |
-| `pnpm build` | 静的 export（`out/`） |
+| `pnpm dev` | 開発サーバ起動 (`http://localhost:5173`) |
+| `pnpm build` | 単一 HTML を出力（`dist/index.html`） |
+| `pnpm preview` | ビルド結果をローカル配信 |
 | `npm test` | Vitest unit テスト (1 回) |
 | `npm run test:watch` | Vitest watch モード |
 | `npx tsc --noEmit` | TypeScript 型チェック |
@@ -141,15 +144,9 @@ LLM 推論ロジックを保持する `src/llm/` モジュールは存在しな�
 
 全 sensor 一括は `/quality-check` skill。
 
-### 非ルートパス配信
+### 配信パス
 
-サブパス配信時は `NEXT_PUBLIC_BASE_PATH` を指定:
-
-```bash
-NEXT_PUBLIC_BASE_PATH=/foo/argos pnpm build
-```
-
-`next.config.ts` の `basePath` / `assetPrefix` と、`src/App.tsx` の独自 fetch URL に build 時に inline される。
+成果物が単一 HTML で外部アセット参照を持たないため、**配信パスの設定は不要**。ルート配信でもサブパス配下でも `file://` でもそのまま動く。
 
 ### Pre-commit hook 活性化
 
@@ -171,7 +168,7 @@ NEXT_PUBLIC_BASE_PATH=/foo/argos pnpm build
   - 書く時の条件: WHY が自明でないとき、隠れた制約 / workaround / 仕様の根拠を残す
   - WHAT は書かない
 - **スタイリング**:
-  - インラインスタイルは CSS variable 参照（Catppuccin: Latte/Mocha、`app/globals.css` の semantic token）
+  - インラインスタイルは CSS variable 参照（Catppuccin: Latte/Mocha、`src/globals.css` の semantic token）
   - ハードコード hex 禁止（mermaid 等の静的出力は例外）
 - 層の責務を越境しない（§3 の依存方向）
 
@@ -185,10 +182,12 @@ NEXT_PUBLIC_BASE_PATH=/foo/argos pnpm build
 
 機能単位の作業計画が必要なら `docs/plan/foo.md` として書き起こす（背景・概要・受け入れ条件を含む単独着手可能な単位）。
 
-### 9-3. Hydration mismatch
+### 9-3. 永続値の読み出しタイミング
 
-`localStorage` / `window.matchMedia` 値は **mount 後 useEffect** で State に反映する。`useState(loadStored)` だと SSR と client で値がズレる。
+`localStorage` / `window.matchMedia` 値は **mount 後 useEffect** で State に反映する。
 既存パターン: `useUIStore.themePreference`、`SidePanel.panelWidth`。
+
+Next の SSR/prerender が無くなったため hydration mismatch そのものは発生しなくなったが、この形は維持している。トレードオフとして、テーマ適用が mount 後になる分、初回 load 時に light → dark のフラッシュが一瞬出る。
 
 ### 9-4. ConfirmDialog
 
@@ -226,8 +225,10 @@ NEXT_PUBLIC_BASE_PATH=/foo/argos pnpm build
 | Skill | [`.claude/skills/argos/SKILL.md`](./.claude/skills/argos/SKILL.md) | Notion → JSON 生成スキル |
 | Plugin manifest | [`.claude-plugin/plugin.json`](./.claude-plugin/plugin.json) | Claude Code plugin として配布する際のメタデータ |
 | Marketplace manifest | [`.claude-plugin/marketplace.json`](./.claude-plugin/marketplace.json) | 自身を plugin として list する marketplace 定義 |
+| ADR 0001 | [`docs/adr/0001-vite-singlefile-html.md`](./docs/adr/0001-vite-singlefile-html.md) | Next static export → Vite + 単一 HTML への移行判断 |
+| Plan | [`docs/plan/vite-singlefile-html.md`](./docs/plan/vite-singlefile-html.md) | 上記移行の Step 分割と実測結果 |
 
-ADR (`docs/adr/`) / プラン (`docs/plan/`) は発生時に追加する（現状は新規プロジェクトとして空）。
+ADR (`docs/adr/`) / プラン (`docs/plan/`) は発生時に追加する。
 
 ## 12. 質問・不明点の解消
 

@@ -12,6 +12,7 @@
   - 論点ズレ / 接続先見直し候補（skill 側で分析を回した場合）
   - 採用検討の余地あり / 代替案が同時 agreed 等
 - ブラウザは **LLM・API サーバーに依存しない**（完全静的、GitHub Pages / S3 / GCS 等にデプロイ可）
+- ビルド成果物は **`dist/index.html` 1 ファイルだけ**。JS/CSS が全て HTML にインライン化されるので、ダウンロードしてダブルクリックすればサーバー無しでそのまま開ける
 
 ## 使い方
 
@@ -22,7 +23,7 @@
 - 手動編集で Issue/Claim/Argument を直接組む
 - skill が生成した JSON を **Import → JSON ファイルから** で読み込む
 
-自前でホストしたい場合は [ビルド・デプロイ](#ビルド・デプロイ) を参照。
+ホスト版の HTML をそのまま保存すれば、オフラインでも同じものが動く。自前でホストしたい場合は [ビルド・デプロイ](#ビルド・デプロイ) を参照。
 
 ### Notion ページから生成 (Claude Code plugin)
 
@@ -60,7 +61,7 @@ skill が以下を実行:
 
 ```bash
 pnpm install
-pnpm dev          # http://localhost:3000
+pnpm dev          # http://localhost:5173
 ```
 
 skill 用バンドル (zod 検証 + 保存スクリプト) を再生成:
@@ -73,14 +74,15 @@ pnpm build:skill  # → .claude/skills/argos/scripts/save-fixture.mjs
 
 main push で `https://flexphere.github.io/argos/` に自動 deploy される (`.github/workflows/deploy.yml`)。
 
-自前でホストするには:
-
 ```bash
-pnpm build                                  # out/ に静的サイトを出力 (ルート配信)
-NEXT_PUBLIC_BASE_PATH=/foo/argos pnpm build # サブパス配信時
+pnpm build   # → dist/index.html (1 ファイル / 約 545KB)
 ```
 
-`out/` を任意の static ホスティング (S3 / GCS / Cloudflare Pages 等) にアップロードする。
+出力は **単一 HTML 1 枚**。外部アセット参照が無いので、置き場所を選ばない。
+
+- **ローカルで開く**: `dist/index.html` をダブルクリックするだけ（`file://` で動く。サーバー不要）
+- **配布する**: この 1 ファイルを渡せばそのまま動く
+- **ホストする**: 任意の static ホスティング (S3 / GCS / Cloudflare Pages 等) に置く。サブパス配下でもパス調整は要らない
 
 ## アーキテクチャ
 
@@ -97,7 +99,7 @@ NEXT_PUBLIC_BASE_PATH=/foo/argos pnpm build # サブパス配信時
   zod 検証 + extractions/<id>.json
 ```
 
-- **Browser**: Next.js (App Router static export) / React Flow / Zustand / zod
+- **Browser**: Vite + React (単一 HTML ビルド) / React Flow / Zustand / zod
 - **Skill**: 親 Claude Code セッションが in-context で抽出（`claude -p` サブプロセス不要、サブスク範囲内）。`scripts/save-fixture.mjs` が zod 検証 + JSON 書き出しのみ担当
 - レイヤー分離 (schema / store / graph / ui / io / signals) の依存方向は `tests/architecture/dependencies.test.ts` で機械検証
 
@@ -117,8 +119,9 @@ NEXT_PUBLIC_BASE_PATH=/foo/argos pnpm build # サブパス配信時
 
 | コマンド | 用途 |
 |---|---|
-| `pnpm dev` | 開発サーバ |
-| `pnpm build` | 静的 export |
+| `pnpm dev` | 開発サーバ (Vite) |
+| `pnpm build` | 単一 HTML を出力 (`dist/index.html`) |
+| `pnpm preview` | ビルド結果をローカル配信 |
 | `npm test` | Vitest unit |
 | `npx playwright test` | E2E |
 | `npx tsc --noEmit` | 型チェック |
