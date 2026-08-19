@@ -7,4 +7,7 @@ import { viteSingleFile } from "vite-plugin-singlefile"
 // (file:// でもサブパス配信でもそのまま開ける)。詳細は docs/adr/0001-vite-singlefile-html.md。
 export default defineConfig({
   plugins: [react(), viteSingleFile()],
+  // Playwright の webServer が同じ port を前提にするため固定する。
+  // 空いていなければ黙って別 port に逃げず失敗させたいので strictPort。
+  server: { port: 5173, strictPort: true },
 })

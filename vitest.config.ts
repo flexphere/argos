@@ -16,6 +16,7 @@ export default defineConfig({
         "src/**/*.spec.ts",
         // 型のみのファイルや純粋宣言は対象外
         "src/schema/index.ts",
+        "src/**/*.d.ts",
       ],
       // 閾値はベースライン取得後に段階的に引き上げる。初期は警告のみ。
       // thresholds: { lines: 60, statements: 60, functions: 50, branches: 50 },
