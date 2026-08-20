@@ -15,7 +15,8 @@
       "playwright-report",
       "test-results",
       "blob-report",
-      ".claude/skills/argos/scripts/save-fixture.mjs"
+      ".claude/skills/argos/scripts/save-fixture.mjs",
+      ".claude/skills/argos/scripts/embed-fixture.mjs"
     ]
   },
   "formatter": {
