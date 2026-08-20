@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin.json",
   "name": "argos",
   "displayName": "Argos",
-  "version": "0.1.0",
-  "description": "Notion meeting transcripts → IBIS/Toulmin discussion graph fixtures for the Argos visualizer.",
+  "version": "0.2.0",
+  "description": "Notion meeting transcripts → IBIS/Toulmin discussion graph fixtures for the Argos visualizer. Bundles the standalone viewer as a single HTML file.",
   "author": {
     "name": "flexphere",
     "url": "https://github.com/flexphere"

@@ -58,7 +58,8 @@ scripts/                   ビルドスクリプト
 └── argos/                 Notion → JSON 生成スキル
     ├── SKILL.md
     ├── references/        in-context 抽出/分析のプロンプト + スキーマ説明
-    └── scripts/           bundle 済 .mjs 群
+    ├── scripts/           bundle 済 .mjs 群 (pnpm build:skill で再生成)
+    └── assets/            plugin 同梱の単一 HTML (pnpm build で再生成)
 
 .claude-plugin/            Claude Code plugin / marketplace メタデータ
 ├── plugin.json            plugin manifest (skill 探索パス: .claude/skills)
@@ -216,6 +217,8 @@ Next の SSR/prerender が無くなったため hydration mismatch そのもの�
 - テスト結果を見ずに「動いた」と報告する
 - TypeScript エラーを無視する（`@ts-ignore` は最終手段）
 - ADR で不採用とした案を、新 ADR なしに採用する
+- **git track している生成物を再生成せずに `src/` を変更する**。`.claude/skills/argos/assets/argos.html`（`pnpm build`）と `.claude/skills/argos/scripts/save-fixture.mjs`（`pnpm build:skill`）の 2 つ。CI が鮮度を検証して落とすが、生成物を変えたら `.claude-plugin/plugin.json` の `version` も上げること（UI 変更=patch / skill 仕様変更=minor / 互換破壊=major）
+- `.gitignore` から `/out/` を消す。Next のビルド出力と同名だが、skill が中間ファイル置き場として使っている
 
 ## 11. 文書索引
 

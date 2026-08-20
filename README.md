@@ -55,7 +55,15 @@ skill が以下を実行:
 3. 任意で分析（論点ズレ / 接続先見直し候補）を同セッションで生成
 4. zod 検証 + cwd 直下の `extractions/<page-id>.json` に保存
 
-生成された JSON をホスト版ブラウザの **Import → JSON ファイルから** で開く。
+生成された JSON を **Import → JSON ファイルから** で開く。
+
+**argos 本体は plugin に同梱されている**ので、ビルドもネットワークも不要:
+
+```
+<plugin のインストール先>/.claude/skills/argos/assets/argos.html
+```
+
+このファイルをブラウザで開くだけで使える。ホスト版 https://flexphere.github.io/argos/ でも同じものが動く。
 
 ### 開発
 
@@ -76,9 +84,12 @@ main push で `https://flexphere.github.io/argos/` に自動 deploy される (`
 
 ```bash
 pnpm build   # → dist/index.html (1 ファイル / 約 545KB)
+             #   同じものが .claude/skills/argos/assets/argos.html にも複製される
 ```
 
 出力は **単一 HTML 1 枚**。外部アセット参照が無いので、置き場所を選ばない。
+
+`.claude/skills/argos/assets/argos.html` は plugin 配布用に git track している。plugin 利用者がビルドせずに使えるようにするためで、CI が `pnpm build` の結果と一致するかを検証している（[ADR 0002](./docs/adr/0002-bundle-html-in-plugin.md)）。**`src/` を変更したら `pnpm build` して再生成し、併せて `.claude-plugin/plugin.json` の `version` を上げること。**
 
 - **ローカルで開く**: `dist/index.html` をダブルクリックするだけ（`file://` で動く。サーバー不要）
 - **配布する**: この 1 ファイルを渡せばそのまま動く
