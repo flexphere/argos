@@ -70,3 +70,34 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  # 生成物を変えたのに plugin.json の version を据え置くと、auto-update を
+  # 有効にしている利用者にも更新が届かない (third-party marketplace の
+  # auto-update は既定オフで、version を bump しない限り更新されない)。
+  # 「CI は緑だが誰にも届かない更新」を防ぐためのガード。
+  # base との比較が要るため pull_request のときだけ走らせる。
+  version-guard:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 生成物を変えたら version が上がっているかを検証
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          BASE="origin/${BASE_REF}"
+          if git diff --quiet "${BASE}...HEAD" -- .claude/skills/argos/assets/argos.html .claude/skills/argos/scripts/save-fixture.mjs; then
+            echo "配布される生成物に変更がないため version bump は不要です"
+            exit 0
+          fi
+          BASE_VERSION=$(git show "${BASE}:.claude-plugin/plugin.json" | jq -r .version)
+          HEAD_VERSION=$(jq -r .version .claude-plugin/plugin.json)
+          echo "base: ${BASE_VERSION} / head: ${HEAD_VERSION}"
+          if [ "${BASE_VERSION}" = "${HEAD_VERSION}" ]; then
+            echo "::error::配布される生成物が変わっているのに .claude-plugin/plugin.json の version が ${HEAD_VERSION} のままです。version を bump しない限り利用者に更新が届きません。基準は UI 変更=patch / skill 仕様変更=minor / 互換破壊=major です。"
+            exit 1
+          fi
+          echo "version は ${BASE_VERSION} から ${HEAD_VERSION} に更新されています"
