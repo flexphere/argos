@@ -60,7 +60,15 @@ export type ImportResult =
  * を実行する。
  */
 export async function parseImportFile(file: File): Promise<ImportResult> {
-  const text = await file.text()
+  return parseImportJson(await file.text())
+}
+
+/**
+ * `parseImportFile` の本体。File ではなく文字列を受け取る。
+ * skill が HTML に焼き込んだ埋め込みデータ (`io/embeddedFixture.ts`) も
+ * 同じ判定・検証を通したいため、File 読み出しと分離してある。
+ */
+export function parseImportJson(text: string): ImportResult {
   const json: unknown = JSON.parse(text)
 
   if (json && typeof json === "object" && "$schema_version" in json) {

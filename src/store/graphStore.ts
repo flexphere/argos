@@ -1,6 +1,6 @@
 import { temporal } from "zundo"
 import { create } from "zustand"
-import { persist } from "zustand/middleware"
+import { type StateStorage, createJSONStorage, persist } from "zustand/middleware"
 import type {
   ArgumentNode,
   ClaimNode,
@@ -13,6 +13,7 @@ import type {
   ReferenceNode,
   Signal,
 } from "../schema"
+import { EMBEDDED_DATA_ELEMENT_ID } from "../schema/embedded"
 import type { SemanticAnalysisResult } from "../schema/semantic"
 
 const emptyGraph: Graph = {
@@ -118,6 +119,33 @@ function applyToAllNodeArrays(graph: Graph, fn: <T extends AnyNode>(nodes: T[]) 
     criteria: fn(graph.criteria),
     references: fn(graph.references),
   }
+}
+
+/**
+ * skill が配布用 HTML に議論データを焼き込んだ状態かどうか。
+ *
+ * store が DOM を読むのは層として例外的だが、永続化先の決定は store の
+ * 生成時に済ませる必要があり、io 層に依存すると依存方向が逆転するため
+ * ここで判定する。参照する要素 ID の定数は schema に置いてある。
+ */
+function hasEmbeddedData(): boolean {
+  if (typeof document === "undefined") return false
+  return document.getElementById(EMBEDDED_DATA_ELEMENT_ID) !== null
+}
+
+/**
+ * 何も保存しないストレージ。
+ *
+ * 埋め込み HTML では localStorage を使わない。file:// で開いたページの
+ * origin は一律 `file://` になり、会議ごとに配った別ファイルの HTML が
+ * 同じ localStorage を共有してしまうため、互いの状態を奪い合う
+ * (実測: docs/adr/0003-embed-data-in-html.md)。配布物が閲覧者のブラウザ
+ * 状態を汚さない利点もある。編集を残したい場合は Export を使う。
+ */
+const noopStorage: StateStorage = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
 }
 
 export const useGraphStore = create<GraphStore>()(
@@ -499,6 +527,7 @@ export const useGraphStore = create<GraphStore>()(
       version: 2,
       // 永続化対象は graph のみ（temporal 履歴は永続化しない）
       partialize: (state) => ({ graph: state.graph }),
+      storage: createJSONStorage(() => (hasEmbeddedData() ? noopStorage : localStorage)),
     },
   ),
 )
