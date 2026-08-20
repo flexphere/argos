@@ -21,7 +21,10 @@ LLM 推論はすべて親セッション内で完結するので、`claude -p` �
 
 - `claude.ai` の Notion インテグレーションが対象ワークスペースで Approved されている (`mcp__claude_ai_Notion__notion-fetch` が動く)
 - Node.js 22+ が PATH に存在する (scripts は self-contained ESM バンドルのため追加依存インストールは不要)
-- argos ブラウザアプリが開いていること (ホスト版、`pnpm build` が出す `dist/index.html` を直接開く、または開発時は `pnpm dev`)
+- argos ブラウザアプリが開けること。以下のいずれか:
+  - **plugin 同梱の `${CLAUDE_PLUGIN_ROOT}/.claude/skills/argos/assets/argos.html` をブラウザで直接開く** (ネットワーク不要。単一 HTML なのでダブルクリックで動く)
+  - ホスト版 https://flexphere.github.io/argos/
+  - 開発時は `pnpm dev` (`http://localhost:5173`)
 
 ## 実行ステップ
 
@@ -161,7 +164,11 @@ Page ID: <page_id>
   - extractions/<page_id>.json
 
 ブラウザの Import → 「JSON ファイルから」で上記 JSON を読み込んでください。
+argos 本体はこの plugin に同梱されています (ネットワーク不要):
+  <CLAUDE_PLUGIN_ROOT を展開した実パス>/.claude/skills/argos/assets/argos.html
 ```
+
+`CLAUDE_PLUGIN_ROOT` は報告時に実パスへ展開して提示する。利用者がそのまま開けるようにするため。
 
 ## エラーハンドリング
 
