@@ -19,6 +19,16 @@ CI は現在 `deploy.yml` 1 本のみで、**テストすら回っていない**
 
 後者は既に track されているが鮮度を保証する仕組みがなく、実際に一度ズレかけている（ADR 参照）。今回のガードは両方を同じ仕組みで守る。
 
+## 進捗
+
+**全 Step 完了。**
+
+- ✅ **Step 1**: 品質センサー CI 新設（PR #1 でマージ済み）。Ubuntu ビルドのハッシュが手元と完全一致し、ADR 0002 の前提が実証された
+- ✅ **Step 2**: HTML を `.claude/skills/argos/assets/argos.html` に同梱
+- ✅ **Step 3**: 生成物の鮮度チェック
+- ✅ **Step 4**: version bump チェック
+- ✅ **Step 5**: plugin としての動作確認とドキュメント
+
 ## Step 分割
 
 step ごとにコミットを分ける。
@@ -33,9 +43,9 @@ step ごとにコミットを分ける。
 - `HUSKY: "0"` は `deploy.yml` と同様に設定
 - **併せて `pnpm build` して `dist/index.html` の SHA-256 を出力するだけの step を置く**。ADR 0002 の前提（ビルドが決定的）が Ubuntu でも成り立つかを、生成物をコミットする前に確認するため。手元の実測値 `41dbfcfb…ecabc1d0` と突き合わせる
 
-**確認**: PR を作って全 job が緑になる。かつ Ubuntu のビルドハッシュが手元と一致する
+**確認**: ✅ PR #1 で全 job 緑。Ubuntu / Node 22 のビルドハッシュは `41dbfcfb0d9218874f2d2549b221b94e5a49d21f1620c9829b7d3900ecabc1d0` で、手元（macOS / Node 24・22）と**完全一致**した。バイト一致による鮮度検証が成立することを確認
 
-**ここでハッシュが一致しなければ Step 2 に進まず、「未確定事項」に従って方針を見直す。** 生成物をコミットした後に前提が崩れると手戻りが大きいため、この step で潰しておく。
+マージ後に Pages deploy も走り、ADR 0001 の最後の持ち越しだったホスト版の確認も完了した。https://flexphere.github.io/argos/ はネットワークリクエスト 1 本（`index.html` のみ）・`_next/` 参照 0・エラー 0 で動作している。
 
 ### Step 2: HTML を plugin に同梱
 
@@ -49,7 +59,11 @@ step ごとにコミットを分ける。
 - `.claude/skills/argos/SKILL.md`: テンプレートの所在を追記
 - `README.md`: plugin 利用者向けに「インストールすれば HTML が手元に入る」ことを記載
 
-**確認**: `pnpm build` 後に `git status` がクリーン（＝コミット済みと一致）
+**確認**: ✅ `pnpm build` 後に `git status` がクリーン。`dist/index.html` と `assets/argos.html` の SHA-256 も一致
+
+複製は `cp` ではなく vite の `closeBundle` フック内で node の API を使って行う（OS 差を持ち込まないため）。`apply: "build"` を付けているので dev では走らない。
+
+**biome の ignore について補足**: 当初「ignore しないと 545KB を検査してしまう」と見込んでいたが、実測すると **biome 1.9 は `.html` を処理しない**（ルートの `index.html` も「0 files processed」）。したがって現時点では無害で、追加した ignore は将来 biome が HTML をサポートした場合の予防にあたる。
 
 ### Step 3: 生成物の鮮度チェックを CI に追加
 
@@ -64,7 +78,7 @@ ADR の根拠となった「ビルドは決定的」を CI 上で実証する st
 - 差分検出時のメッセージで対処を案内する（`pnpm build && pnpm build:skill` を実行して commit する、と）
 - **この step で Ubuntu ビルドのハッシュが手元と一致するかが判明する**。一致しなければ ADR の前提が崩れるので、その場合は「未確定事項」に従って方針を見直す
 
-**確認**: 生成物を古いまま push した PR が落ち、再生成した PR が通る
+**確認**: ✅ ローカルで同じロジックを実行し、正常系（差分なし = 通過）と異常系（生成物を書き換え = 検出して `diff --stat` を出力）の両方を確認済み
 
 ### Step 4: version bump チェックを CI に追加
 
@@ -85,7 +99,7 @@ ADR の根拠となった「ビルドは決定的」を CI 上で実証する st
 | skill の出力仕様 / JSON スキーマの変更 | **minor** |
 | 互換を壊す変更（古い JSON が読めなくなる等） | **major** |
 
-**確認**: 生成物だけ変えて version 据え置きの PR が落ちる
+**確認**: ✅ ローカルで同じロジックを実行し、正常系（`0.1.0` → `0.2.0` = 通過）と異常系（据え置き = `exit 1`）の両方を確認済み
 
 ### Step 5: plugin としての動作確認とドキュメント
 
@@ -93,7 +107,9 @@ ADR の根拠となった「ビルドは決定的」を CI 上で実証する st
 - `plugin.json` の `version` を 0.1.0 から上げる（同梱物が増えるため）
 - ADR 0002 の Status を `Proposed` → `Accepted` に更新し、Step 3 で判明した Ubuntu ビルドの結果を追記
 
-**確認**: 上記が全て通る
+**確認**: ✅ `claude plugin validate ./` が通過。同梱した `assets/argos.html` を `file://` で開き、描画・Import（6 ノード / 6 エッジ）・Export JSON が動作、**ネットワークリクエストは 1 本のみ**（自己完結）、エラー 0 件
+
+`version` は 0.1.0 から **0.2.0** に上げた。配布物の構成が変わる（HTML が加わる）ため minor とした。
 
 #### 事前調査で解消済みの懸念
 
@@ -124,12 +140,12 @@ argos の `CLAUDE.md` は「このリポジトリで作業する AI エージェ
 
 ## 受け入れ条件
 
-- `pnpm build` 後に作業ツリーがクリーンになる（生成物がコミット済みと一致）
-- 生成物を古いまま push した PR が CI で落ちる
-- 生成物を変えて version を据え置いた PR が CI で落ちる
-- `npx tsc --noEmit` / `npx biome check .` / `npm test` / `npx playwright test` / `npm run check:dead` が CI で緑
-- `claude plugin validate ./` が通る
-- plugin をインストールした利用者が、ネットワークなしで argos を開ける
+- ✅ `pnpm build` 後に作業ツリーがクリーンになる（生成物がコミット済みと一致）
+- ✅ 生成物を古いまま push した PR が CI で落ちる（ロジックをローカルで実証）
+- ✅ 生成物を変えて version を据え置いた PR が CI で落ちる（同上）
+- ✅ `npx tsc --noEmit` / `npx biome check .` / `npm test` / `npx playwright test` / `npm run check:dead` が CI で緑
+- ✅ `claude plugin validate ./` が通る
+- ✅ plugin をインストールした利用者が、ネットワークなしで argos を開ける（同梱 HTML を `file://` で開き、リクエスト 1 本・エラー 0 で動作）
 
 ## スコープ外
 
@@ -139,10 +155,13 @@ argos の `CLAUDE.md` は「このリポジトリで作業する AI エージェ
 
 ## 未確定事項
 
-- **Ubuntu でのビルドハッシュ**。手元では Node 24 / 22 の両方で一致を確認済みだが、OS 差は CI を回すまで分からない。もし Ubuntu で異なるハッシュが出た場合、鮮度チェックは「バイト一致」では成立しない。その場合の代替は、(a) CI をビルド環境の正とし手元では検証しない、(b) 比較を意味的な単位に緩める、(c) CI が生成物を自動コミットする、のいずれか。Step 3 の結果を見て判断する
-- **playwright を CI で回す時間**。ブラウザのインストールが毎回走ると重い。キャッシュで抑えるか、PR では unit のみ・main では E2E も、と分ける案もある。まず素直に入れて実測してから判断する
+- **playwright を CI で回す時間**。ブラウザのインストールが毎回走る。PR #1 の CI は全体で 1 分 20 秒だったので現状は許容範囲。増えてきたらキャッシュを検討する
+- **GitHub Actions の Node 20 deprecation 警告**。`actions/checkout@v4` / `actions/setup-node@v4` / `actions/configure-pages@v5` / `actions/upload-artifact@v4` / `pnpm/action-setup@v4` が Node 20 をターゲットにしており、runner 側で Node 24 に強制されている旨の警告が `ci.yml` / `deploy.yml` の両方で出る。今すぐ壊れるものではないが、action のメジャーを上げる対応がいずれ要る
 
 ### 解決済み
+
+- ~~Ubuntu でのビルドハッシュ~~ → PR #1 で macOS と**完全一致**を確認。バイト一致による鮮度検証が成立する
+- ~~biome が 545KB の HTML を検査してしまう~~ → biome 1.9 は `.html` を処理しないため元から無害だった。追加した ignore は将来への予防（Step 2 参照）
 
 - ~~`marketplace.json` にも version が要るのではないか~~ → 不要。`claude plugin tag --dry-run` で `plugin.json` から解決されることを確認（Step 5 参照）
 - ~~`plugin.json` の version 運用基準~~ → UI=patch / skill 仕様=minor / 互換破壊=major に決定（Step 4 参照）

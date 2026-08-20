@@ -1,6 +1,6 @@
 # ADR 0002: ビルド済み単一 HTML を plugin に同梱する
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-20
 - 関連: [ADR 0001](./0001-vite-singlefile-html.md)
 
@@ -25,7 +25,9 @@
 
 **2. ビルドは決定的である。**
 
-同一環境で 3 回、および Node 24.18.1 / 22.22.2 の 2 バージョンでビルドし、`dist/index.html` の SHA-256 が全て `41dbfcfb…ecabc1d0` で一致することを実測した。CI（Node 22 / Ubuntu）と手元（Node 24 / macOS）でハッシュが揺れないため、**生成物の鮮度を CI で機械的に検証しても誤検知しない**。OS 差だけは実測できていないが、Node のメジャー差で揺れない以上、残リスクは小さいと判断する。
+同一環境で 3 回、および Node 24.18.1 / 22.22.2 の 2 バージョンでビルドし、`dist/index.html` の SHA-256 が全て `41dbfcfb…ecabc1d0` で一致することを実測した。
+
+**OS 差も PR #1 の CI で検証済み。** Ubuntu / Node 22 のビルドも同じ `41dbfcfb0d9218874f2d2549b221b94e5a49d21f1620c9829b7d3900ecabc1d0` を出力し、手元の macOS と完全に一致した。したがって**生成物の鮮度を CI でバイト一致により検証しても誤検知しない**。
 
 ## 採用案
 
