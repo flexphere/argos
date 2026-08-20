@@ -81,8 +81,11 @@ Proposed から Accepted に進めるには、以下を実測で確認する。
    - Export PNG: `argos-20260819-1434.png` を 204,447 bytes でダウンロード
 3. ~~vitest 4 で既存 unit テストが緑になること~~ → vitest 更新自体が不要になったため項目を取り下げ。vite 8 追加後も既存 18 ファイル 163 テストは全緑
 4. ✅ **確認済** — Playwright 7 spec / 25 テストが Vite dev サーバー（`localhost:5173`）上で全て緑
-5. ⬜ **未確認（初回 deploy 時に持ち越し）** — GitHub Pages への配信は実際に main へ push するまで検証できない。`deploy.yml` は `path: ./dist` に切り替え済みで、`.nojekyll` は不要（`_next/` のような underscore 始まりのディレクトリを出力しないため）と判断しているが、この判断の当否は初回 deploy で確認する
+5. ✅ **確認済** — PR #1 のマージで Pages deploy が走り、https://flexphere.github.io/argos/ が正常に動作することを確認した。headless Chromium での実測は以下。`.nojekyll` を落とし `basePath` を削除した判断も妥当だったことになる
+   - HTTP 200、転送サイズ 162,275 bytes（gzip）
+   - **ネットワークリクエストは 1 本のみ**（`index.html` だけ）。外部アセットを一切取りに行かずページが完成している
+   - `_next/` への参照 0 件、`pageerror` / `console.error` ともに 0 件
 
-項目 5 のみローカルで検証不能なため未確認のまま Accepted とする。初回 deploy でホスト版が壊れた場合は、この ADR に結果を追記したうえで対処する。
+全項目の検証が完了した。
 
 実装プランは [`docs/plan/vite-singlefile-html.md`](../plan/vite-singlefile-html.md)。
