@@ -93,3 +93,13 @@ test("Export した HTML を開くと同じグラフが復元される (往復)"
   const texts = await page.locator(".react-flow__node").allInnerTexts()
   expect(texts.some((t) => t.includes("</script>"))).toBe(true)
 })
+
+test("dev サーバーでは HTML Export が選べない", async ({ page }) => {
+  // dev ではアプリ本体が HTML に含まれず、出力しても白画面になるため無効化している。
+  // 本番ビルド (file://) では有効であることは上の往復テストが担保している。
+  await page.goto("/")
+  await page.getByRole("button", { name: /Export/ }).click()
+  const htmlItem = page.getByRole("menu").getByRole("button", { name: /HTML/ })
+  await expect(htmlItem).toBeDisabled()
+  await expect(page.getByRole("menu").getByRole("button", { name: /JSON/ })).toBeEnabled()
+})
