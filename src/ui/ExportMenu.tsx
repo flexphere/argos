@@ -4,6 +4,11 @@ import { downloadGraphAsPng } from "../io/imageExport"
 import { buildExportRoot, defaultFilename, downloadJson } from "../io/jsonIO"
 import { useGraphStore } from "../store/graphStore"
 
+// dev サーバーではアプリ本体が HTML に含まれず /src/main.tsx を外部参照したままに
+// なるため、出力した HTML を開いても CORS で弾かれて白画面になる。押しても失敗が
+// console にしか出ず成功したように見えるので、選べないようにしておく。
+const HTML_EXPORT_UNAVAILABLE = import.meta.env.DEV
+
 export function ExportMenu() {
   const [open, setOpen] = useState(false)
   const [exportingPng, setExportingPng] = useState(false)
@@ -72,11 +77,25 @@ export function ExportMenu() {
               <div className="export-menu-desc">完全データ・再インポート可</div>
             </span>
           </button>
-          <button type="button" className="export-menu-item" onClick={handleHtml}>
+          <button
+            type="button"
+            className="export-menu-item"
+            onClick={handleHtml}
+            disabled={HTML_EXPORT_UNAVAILABLE}
+            title={
+              HTML_EXPORT_UNAVAILABLE
+                ? "dev サーバーではアプリ本体が HTML に含まれないため利用できません"
+                : undefined
+            }
+          >
             <span className="export-menu-icon">🌐</span>
             <span>
               <div className="export-menu-name">HTML</div>
-              <div className="export-menu-desc">データ込み・開くだけで見られる</div>
+              <div className="export-menu-desc">
+                {HTML_EXPORT_UNAVAILABLE
+                  ? "dev サーバーでは利用不可 (pnpm build した成果物で実行)"
+                  : "データ込み・開くだけで見られる"}
+              </div>
             </span>
           </button>
           <button
