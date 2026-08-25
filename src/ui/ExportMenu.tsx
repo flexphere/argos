@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { downloadGraphAsHtml } from "../io/htmlExport"
 import { downloadGraphAsPng } from "../io/imageExport"
 import { buildExportRoot, defaultFilename, downloadJson } from "../io/jsonIO"
 import { useGraphStore } from "../store/graphStore"
@@ -28,6 +29,15 @@ export function ExportMenu() {
     const graph = useGraphStore.getState().graph
     downloadJson(buildExportRoot(graph), defaultFilename())
     setOpen(false)
+  }
+
+  const handleHtml = () => {
+    try {
+      downloadGraphAsHtml()
+      setOpen(false)
+    } catch (e) {
+      console.error("HTML 出力に失敗しました:", e)
+    }
   }
 
   const handlePng = async () => {
@@ -60,6 +70,13 @@ export function ExportMenu() {
             <span>
               <div className="export-menu-name">JSON</div>
               <div className="export-menu-desc">完全データ・再インポート可</div>
+            </span>
+          </button>
+          <button type="button" className="export-menu-item" onClick={handleHtml}>
+            <span className="export-menu-icon">🌐</span>
+            <span>
+              <div className="export-menu-name">HTML</div>
+              <div className="export-menu-desc">データ込み・開くだけで見られる</div>
             </span>
           </button>
           <button

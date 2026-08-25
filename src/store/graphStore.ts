@@ -134,18 +134,26 @@ function hasEmbeddedData(): boolean {
 }
 
 /**
- * 何も保存しないストレージ。
+ * graph の永続化先。
  *
- * 埋め込み HTML では localStorage を使わない。file:// で開いたページの
- * origin は一律 `file://` になり、会議ごとに配った別ファイルの HTML が
- * 同じ localStorage を共有してしまうため、互いの状態を奪い合う
- * (実測: docs/adr/0003-embed-data-in-html.md)。配布物が閲覧者のブラウザ
- * 状態を汚さない利点もある。編集を残したい場合は Export を使う。
+ * 埋め込み HTML では何もしない。file:// で開いたページの origin は一律
+ * `file://` になり、会議ごとに配った別ファイルの HTML が同じ localStorage を
+ * 共有してしまうため、互いの状態を奪い合う (実測:
+ * docs/adr/0003-embed-data-in-html.md)。配布物が閲覧者のブラウザ状態を
+ * 汚さない利点もある。編集を残したい場合は Export を使う。
+ *
+ * localStorage は毎回 globalThis 経由で引く。createJSONStorage に
+ * `() => localStorage` を渡すと store 生成時の一度だけ評価されるため、
+ * まだ用意されていない環境 (テストランナー等) で undefined を掴んでしまう。
  */
-const noopStorage: StateStorage = {
-  getItem: () => null,
-  setItem: () => {},
-  removeItem: () => {},
+const graphStorage: StateStorage = {
+  getItem: (name) => (hasEmbeddedData() ? null : (globalThis.localStorage?.getItem(name) ?? null)),
+  setItem: (name, value) => {
+    if (!hasEmbeddedData()) globalThis.localStorage?.setItem(name, value)
+  },
+  removeItem: (name) => {
+    if (!hasEmbeddedData()) globalThis.localStorage?.removeItem(name)
+  },
 }
 
 export const useGraphStore = create<GraphStore>()(
@@ -527,7 +535,7 @@ export const useGraphStore = create<GraphStore>()(
       version: 2,
       // 永続化対象は graph のみ（temporal 履歴は永続化しない）
       partialize: (state) => ({ graph: state.graph }),
-      storage: createJSONStorage(() => (hasEmbeddedData() ? noopStorage : localStorage)),
+      storage: createJSONStorage(() => graphStorage),
     },
   ),
 )

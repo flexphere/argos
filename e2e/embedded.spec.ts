@@ -74,3 +74,22 @@ test("埋め込みの無いテンプレートは従来どおり空グラフで�
   await expect(page.locator(".react-flow")).toHaveCount(1)
   await expect(page.locator(".react-flow__node")).toHaveCount(0)
 })
+
+test("Export した HTML を開くと同じグラフが復元される (往復)", async ({ page }) => {
+  await page.goto(embeddedUrl)
+  await expect(page.locator(".react-flow__node")).toHaveCount(4)
+
+  const downloadPromise = page.waitForEvent("download")
+  await page.getByRole("button", { name: /Export/ }).click()
+  await page.getByRole("menu").getByText("HTML", { exact: true }).click()
+  const download = await downloadPromise
+
+  const roundTripPath = path.join(OUT_DIR, "round-trip.html")
+  await download.saveAs(roundTripPath)
+
+  await page.goto(pathToFileURL(roundTripPath).href)
+  await expect(page.locator(".react-flow__node")).toHaveCount(4)
+
+  const texts = await page.locator(".react-flow__node").allInnerTexts()
+  expect(texts.some((t) => t.includes("</script>"))).toBe(true)
+})
