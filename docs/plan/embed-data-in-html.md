@@ -20,6 +20,25 @@ skill が `extractions/<page-id>.html` を生成し、渡した相手が Import 
 
 埋め込みがあるときは **graph store の localStorage 永続化を無効にする**。`file://` では全ファイルが同じ localStorage を共有するため、会議ごとの HTML が互いの状態を奪い合うことを実測で確認したため（ADR 参照）。
 
+## 進捗
+
+**全 Step 完了。**
+
+- ✅ Step 1: 規約の定数と埋め込みデータの読み込み、persist の無効化
+- ✅ Step 2: 埋め込みスクリプト (`embed-fixture.ts`)
+- ✅ Step 3: テスト (unit 12 件 + e2e 5 件を追加)
+- ✅ Step 4: HTML の Export と往復
+- ✅ Step 5: skill への統合
+- ✅ Step 6: CI のパス追加と version bump (0.2.0 → 0.3.0)
+
+### 実装で分かったこと
+
+**1. `vite-plugin-singlefile` はアプリの script を head の先頭付近に置く。** `</head>` 直前の埋め込みは script より後になる。それでも読めるのは inline の `<script type="module">` が defer 相当で HTML パース完了後に評価されるため。位置は本質的な条件ではなかった (ADR の記述を修正済み)。
+
+**2. `pnpm build:skill` は HTML を再生成しない。** 実装中、埋め込んでもノードが 0 件になる事象を追ったところ、原因はテンプレート (`assets/argos.html`) が古いままだったこと。PR #2 で入れた CI の鮮度チェックが守る対象そのものを踏んだ形で、CI があれば PR で止まっていた。CLAUDE.md §10 に注意書きを追加した。
+
+**3. `createJSONStorage(() => localStorage)` は store 生成時に一度だけ評価される。** Step 4 で `htmlExport` がモジュールグラフに加わった結果、評価順序が変わって unit テスト 83 件が `Cannot read properties of undefined (reading 'setItem')` で落ちた。`globalThis.localStorage` を毎回引く `StateStorage` に置き換えて解消。Step 1 の実装は運良く動いていただけだった。
+
 ## Step 分割
 
 step ごとにコミットを分ける。
@@ -99,6 +118,13 @@ step ごとにコミットを分ける。
 
 ## 未確定事項
 
-- **`main.tsx` で取り込むタイミング**。`createRoot().render()` の前に store を更新するか、mount 後の effect で行うか。前者のほうが初期描画から正しい状態になるが、`applyExtraction` が内部で `computeLayout` を呼ぶため、レイアウト計算が DOM 非依存であることが前提になる。純粋関数として `tests/layout.test.ts` が存在するので前者で進める想定だが、実装時に確認する
-- **Export した HTML の土台の取り方**。`document.documentElement.outerHTML` は React が描画した後の DOM を含むため、保存された HTML には描画済みのマークアップが残る。再度開いたときに React が mount して上書きするので実害はない想定だが、Step 4 で実際に往復させて確認する
-- **エスケープ規則の共有方法**。skill スクリプト（`scripts/`）とブラウザ（`src/io/`）の両方で同じ処理が要る。`src/schema/embedded.ts` に置いて両者から import するのが素直だが、schema に処理を置くことの是非は実装時に判断する
+### 解決済み
+
+- ~~`main.tsx` で取り込むタイミング~~ → `createRoot().render()` の**前**に store を更新する形で問題なかった。`computeLayout` は DOM 非依存の純粋関数
+- ~~Export した HTML の土台の取り方~~ → 複製時に `#root` の中身を空にしてから `outerHTML` を取る。往復テスト (`e2e/embedded.spec.ts`) で復元を確認済み
+- ~~エスケープ規則の共有方法~~ → `src/schema/embedded.ts` に定数と関数を置き、store / io / skill スクリプトの三者が参照する形にした。schema はどの層からも import でき、architecture テストの依存方向も壊さない
+
+### 未解決
+
+- **dev サーバーでは HTML Export が機能しない。** script が `/src/main.tsx` を外部参照したままになるため、出力した HTML は単体では動かない。現状は `console.warn` を出すだけ。UI 上で項目を落とす、あるいは警告を見せるかは、実際に困ってから判断する
+- **スキーマ互換方針の明文化**（ADR 0002 から引き続き保留）。ただし埋め込み HTML はデータと viewer が同じファイルに固まるため、共有された成果物については互換性の問題が発生しなくなり、優先度は下がった

@@ -56,9 +56,9 @@ jobs:
         run: |
           pnpm build
           pnpm build:skill
-          if ! git diff --quiet -- .claude/skills/argos/assets/argos.html .claude/skills/argos/scripts/save-fixture.mjs; then
+          if ! git diff --quiet -- .claude/skills/argos/assets/argos.html .claude/skills/argos/scripts/save-fixture.mjs .claude/skills/argos/scripts/embed-fixture.mjs; then
             echo "::error::git track している生成物が src/ の内容と一致していません。ローカルで 'pnpm build && pnpm build:skill' を実行し、差分をコミットしてください。"
-            git --no-pager diff --stat -- .claude/skills/argos/assets/argos.html .claude/skills/argos/scripts/save-fixture.mjs
+            git --no-pager diff --stat -- .claude/skills/argos/assets/argos.html .claude/skills/argos/scripts/save-fixture.mjs .claude/skills/argos/scripts/embed-fixture.mjs
             exit 1
           fi
           echo "生成物は最新です"
@@ -89,7 +89,7 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: |
           BASE="origin/${BASE_REF}"
-          if git diff --quiet "${BASE}...HEAD" -- .claude/skills/argos/assets/argos.html .claude/skills/argos/scripts/save-fixture.mjs; then
+          if git diff --quiet "${BASE}...HEAD" -- .claude/skills/argos/assets/argos.html .claude/skills/argos/scripts/save-fixture.mjs .claude/skills/argos/scripts/embed-fixture.mjs; then
             echo "配布される生成物に変更がないため version bump は不要です"
             exit 0
           fi

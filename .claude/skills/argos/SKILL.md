@@ -7,24 +7,23 @@ description: Visualize a Notion AI Meeting Notes page as an argos argument graph
 
 ## このスキルの役割
 
-ユーザーが指定した Notion ページからトランスクリプトを取得し、**親 Claude Code セッション (= あなた) が直接 in-context で抽出と分析を行う**。結果 JSON を argos の静的アセット (`extractions/<page-id>.json`) に書き出し、ユーザーはブラウザの **Import → JSON ファイルから** で読み込む。
+ユーザーが指定した Notion ページからトランスクリプトを取得し、**親 Claude Code セッション (= あなた) が直接 in-context で抽出と分析を行う**。結果を `extractions/<page-id>.json` に書き出したうえで、plugin 同梱のテンプレートに焼き込んで **開くだけで議論グラフが見られる単一 HTML** (`extractions/<page-id>.html`) を生成する。
 
 **責務分割**:
-- **Claude Code (skill, このセッション)**: Notion 取得 (MCP) → transcript 抽出 → **in-context で ExtractionResult / SemanticAnalysisResult を生成** → 保存スクリプトで zod 検証 + 書き出し
-- **Browser (argos)**: ユーザー操作で JSON を読み込みグラフ描画 (LLM 依存なし・静的配信可)
+- **Claude Code (skill, このセッション)**: Notion 取得 (MCP) → transcript 抽出 → **in-context で ExtractionResult / SemanticAnalysisResult を生成** → zod 検証 + 書き出し → HTML への焼き込み
+- **Browser (argos)**: 焼き込まれたデータを起動時に読んで描画する。または Import で JSON を読み込む (LLM 依存なし・静的配信可)
 
 LLM 推論はすべて親セッション内で完結するので、`claude -p` などのサブプロセス起動は不要。
 
-**最終出力**: `extractions/<page-id>.json` のパスとブラウザでの読み込み手順
+**最終出力**: `extractions/<page-id>.html` (配布用) と `extractions/<page-id>.json` (データ本体)
 
 ## 前提条件
 
 - `claude.ai` の Notion インテグレーションが対象ワークスペースで Approved されている (`mcp__claude_ai_Notion__notion-fetch` が動く)
 - Node.js 22+ が PATH に存在する (scripts は self-contained ESM バンドルのため追加依存インストールは不要)
-- argos ブラウザアプリが開けること。以下のいずれか:
-  - **plugin 同梱の `${CLAUDE_PLUGIN_ROOT}/.claude/skills/argos/assets/argos.html` をブラウザで直接開く** (ネットワーク不要。単一 HTML なのでダブルクリックで動く)
-  - ホスト版 https://flexphere.github.io/argos/
-  - 開発時は `pnpm dev` (`http://localhost:5173`)
+- ブラウザ (生成した HTML を開くため)。ネットワークは不要
+
+argos 本体は plugin に同梱されている (`${CLAUDE_PLUGIN_ROOT}/.claude/skills/argos/assets/argos.html`)。ホスト版 https://flexphere.github.io/argos/ や開発時の `pnpm dev` (`http://localhost:5173`) でも同じものが動く。
 
 ## 実行ステップ
 
@@ -42,7 +41,7 @@ stdout に 32 文字 hex の `page_id` が出る。
 mkdir -p out extractions
 ```
 
-`out/` は中間ファイル (raw / transcript / 生成 JSON)、`extractions/` はブラウザに配信する最終 JSON。
+`out/` は中間ファイル (raw / transcript / 生成前 JSON)、`extractions/` は最終成果物 (`.json` と `.html`)。
 
 ### Step 3: Notion ページの raw を取得
 
@@ -134,9 +133,26 @@ stdout 最終行: `OK page_id=<id> issues=<n> claims=<m> arguments=<k> semantic=
 
 **検証失敗時**: stderr のエラーメッセージを読み、Step 6 / 7 で書き出した JSON を修正して再度 save-fixture を実行する (Step 6/7 から完全に作り直す必要はない)。
 
-### Step 9: ユーザーへの読み込み手順を案内
+### Step 9: 単一 HTML への焼き込み
 
-ユーザーは開いている argos のブラウザで:
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/.claude/skills/argos/scripts/embed-fixture.mjs" \
+  --fixture extractions/<page_id>.json \
+  --template "${CLAUDE_PLUGIN_ROOT}/.claude/skills/argos/assets/argos.html" \
+  --out extractions/<page_id>.html
+```
+
+plugin 同梱のテンプレートに Step 8 の JSON を焼き込み、**開くだけで議論グラフが表示される単一 HTML** を作る。Import 操作は要らず、ネットワークにも依存しない。そのまま人に渡せる。
+
+stdout 最終行: `OK out=<path> issues=<n> claims=<m> arguments=<k>`
+
+`--template` には**素の** `argos.html` を渡す。既に焼き込み済みの HTML を渡すとエラーになる。
+
+### Step 10: ユーザーへの案内
+
+**基本は Step 9 で生成した HTML を開いてもらう。** ブラウザで開くだけで描画される。
+
+JSON を既に開いている argos に読み込ませたい場合は:
 
 1. ヘッダーの **Import** ドロップダウンを開く
 2. **JSON ファイルから** を選択
@@ -145,7 +161,7 @@ stdout 最終行: `OK page_id=<id> issues=<n> claims=<m> arguments=<k> semantic=
 
 `parseImportFile` が形式 (export / fixture) を判定し、fixture なら `applyExtraction` + (semantic があれば) `applyStoredSemantic` で ref→UUID 再マップして描画する。
 
-### Step 10: ユーザーへの報告
+### Step 11: ユーザーへの報告
 
 ```
 📊 argos JSON 生成完了
@@ -161,14 +177,13 @@ Page ID: <page_id>
 
 出力ファイル:
   - out/transcript-<page_id>.txt
-  - extractions/<page_id>.json
+  - extractions/<page_id>.json   (データ本体・再インポート用)
+  - extractions/<page_id>.html   (開くだけで見られる単一 HTML)
 
-ブラウザの Import → 「JSON ファイルから」で上記 JSON を読み込んでください。
-argos 本体はこの plugin に同梱されています (ネットワーク不要):
-  <CLAUDE_PLUGIN_ROOT を展開した実パス>/.claude/skills/argos/assets/argos.html
+extractions/<page_id>.html をブラウザで開いてください。そのまま人に渡せます。
 ```
 
-`CLAUDE_PLUGIN_ROOT` は報告時に実パスへ展開して提示する。利用者がそのまま開けるようにするため。
+HTML のパスは実パスで提示する。利用者がそのまま開けるようにするため。
 
 ## エラーハンドリング
 

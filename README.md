@@ -13,6 +13,7 @@
   - 採用検討の余地あり / 代替案が同時 agreed 等
 - ブラウザは **LLM・API サーバーに依存しない**（完全静的、GitHub Pages / S3 / GCS 等にデプロイ可）
 - ビルド成果物は **`dist/index.html` 1 ファイルだけ**。JS/CSS が全て HTML にインライン化されるので、ダウンロードしてダブルクリックすればサーバー無しでそのまま開ける
+- skill が生成する HTML には**議論データが焼き込まれている**ので、渡した相手は開くだけでグラフを見られる。編集したものは Export → HTML でまた 1 ファイルとして持ち出せる
 
 ## 使い方
 
@@ -54,16 +55,11 @@ skill が以下を実行:
 2. **親 Claude Code セッションが in-context で構造化** (LLM 推論はサブスク範囲内、`claude -p` 等のサブプロセス不要)
 3. 任意で分析（論点ズレ / 接続先見直し候補）を同セッションで生成
 4. zod 検証 + cwd 直下の `extractions/<page-id>.json` に保存
+5. plugin 同梱のテンプレートに焼き込んで `extractions/<page-id>.html` を生成
 
-生成された JSON を **Import → JSON ファイルから** で開く。
+**生成された HTML はブラウザで開くだけで議論グラフが表示される。** Import 操作もネットワークも要らず、そのまま人に渡せる。
 
-**argos 本体は plugin に同梱されている**ので、ビルドもネットワークも不要:
-
-```
-<plugin のインストール先>/.claude/skills/argos/assets/argos.html
-```
-
-このファイルをブラウザで開くだけで使える。ホスト版 https://flexphere.github.io/argos/ でも同じものが動く。
+JSON も併せて残るので、別の argos に読み込ませたい場合は **Import → JSON ファイルから** で開ける。argos 本体は plugin に同梱されている (`<plugin のインストール先>/.claude/skills/argos/assets/argos.html`)。ホスト版 https://flexphere.github.io/argos/ でも同じものが動く。
 
 ### 開発
 
