@@ -1,6 +1,6 @@
 # ADR 0003: skill が生成する HTML に議論データを埋め込む
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-20
 - 関連: [ADR 0001](./0001-vite-singlefile-html.md) / [ADR 0002](./0002-bundle-html-in-plugin.md)
 
@@ -16,7 +16,9 @@
 
 **skill 実行時に、同梱テンプレート HTML へ抽出結果を焼き込んだ `extractions/<page-id>.html` を生成する。**
 
-- 埋め込み位置は **`</head>` の直前**にある `<script type="application/json" id="argos-embedded-data">`。`type="application/json"` の script は実行されないので head でも body でも読み出せるが、head に置けば**アプリ本体の script より前にパースされることが保証される**
+- 埋め込み位置は **`</head>` の直前**にある `<script type="application/json" id="argos-embedded-data">`
+
+  当初は「アプリ本体の script より前に置く必要がある」と考えていたが、実測すると `vite-plugin-singlefile` はアプリの script を head の**先頭付近**にインライン化するため、`</head>` 直前は script より後になる。それでも読めるのは、inline の `<script type="module">` が defer 相当で **HTML のパース完了後に評価される**ため。位置は本質的な条件ではない。`</head>` 直前を選んだのは、テンプレートの構造が変わっても安定して見つかる挿入点だからである
 - ブラウザは起動時にこの要素を探し、あれば `applyExtraction` + `applyStoredSemantic` を通してグラフを構築する。無ければ従来どおり空グラフで起動する
 - **埋め込みデータがある場合、graph store の localStorage 永続化を無効にする**（後述）
 - **`extractions/<page-id>.json` は引き続き出力する。** データの正は JSON 側に置き、HTML は配布用の成果物と位置づける。別バージョンの viewer への再 import や、後からの再生成の余地を残すため

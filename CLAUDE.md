@@ -52,7 +52,8 @@ src/                       アプリ本体
 
 scripts/                   ビルドスクリプト
 ├── save-fixture.ts        skill 用 CLI: zod 検証 + extractions/<id>.json 書き出し (LLM 不要)
-└── build-skill.mjs        save-fixture.ts を .mjs に bundle (pnpm build:skill)
+├── embed-fixture.ts       skill 用 CLI: fixture をテンプレート HTML に焼き込む
+└── build-skill.mjs        上記 2 本を .mjs に bundle (pnpm build:skill)
 
 .claude/skills/            Claude Code 用スキル
 └── argos/                 Notion → JSON 生成スキル
@@ -89,8 +90,16 @@ LLM 推論ロジックを保持する `src/llm/` モジュールは存在しな�
 
 ## 4. 責務分割（Skill ↔ Browser）
 
-- **Claude Code skill (`/argos`)**: Notion 取得 (MCP) → transcript 抽出 → **親セッションが in-context で ExtractionResult / SemanticAnalysisResult を生成** → `scripts/save-fixture.mjs` で zod 検証 + `extractions/<id>.json` 保存
-- **Browser (argos)**: 静的サイト。Import → JSON ファイル経由で skill 出力 JSON または Export 形式 JSON を読み込み、React Flow に描画。**LLM・API サーバーへの依存なし**
+- **Claude Code skill (`/argos`)**: Notion 取得 (MCP) → transcript 抽出 → **親セッションが in-context で ExtractionResult / SemanticAnalysisResult を生成** → `scripts/save-fixture.mjs` で zod 検証 + `extractions/<id>.json` 保存 → `scripts/embed-fixture.mjs` で同梱テンプレートに焼き込み `extractions/<id>.html` 生成
+- **Browser (argos)**: 静的サイト。焼き込まれたデータを起動時に取り込むか、Import → JSON ファイル経由で読み込み、React Flow に描画。**LLM・API サーバーへの依存なし**
+
+### 埋め込みデータの規約
+
+skill が生成する配布用 HTML は `<script type="application/json" id="argos-embedded-data">` にデータを持つ。要素 ID とエスケープ規則は `src/schema/embedded.ts` に集約し、store / io / skill スクリプトの三者が参照する。
+
+- **`<` は必ず `<` にエスケープする。** データ中の `</script>` が script ブロックを閉じる事故を防ぐため。議事録には `<` が普通に含まれるので実データで踏む
+- **埋め込みがある場合、graph store は localStorage に書かない。** `file://` の origin は一律 `file://` で全ファイルが localStorage を共有するため、会議ごとに配った HTML が互いの状態を奪い合う
+- 詳細と実測値は [`docs/adr/0003-embed-data-in-html.md`](./docs/adr/0003-embed-data-in-html.md)
 
 分析は skill 実行時にユーザーに「同時実行するか」を確認し、yes なら親セッションが `references/SEMANTIC_PROMPT.md` に従って生成、save-fixture が抽出結果と結合して書き出す。
 
@@ -217,7 +226,8 @@ Next の SSR/prerender が無くなったため hydration mismatch そのもの�
 - テスト結果を見ずに「動いた」と報告する
 - TypeScript エラーを無視する（`@ts-ignore` は最終手段）
 - ADR で不採用とした案を、新 ADR なしに採用する
-- **git track している生成物を再生成せずに `src/` を変更する**。`.claude/skills/argos/assets/argos.html`（`pnpm build`）と `.claude/skills/argos/scripts/save-fixture.mjs`（`pnpm build:skill`）の 2 つ。CI が鮮度を検証して落とすが、生成物を変えたら `.claude-plugin/plugin.json` の `version` も上げること（UI 変更=patch / skill 仕様変更=minor / 互換破壊=major）
+- **git track している生成物を再生成せずに `src/` を変更する**。`.claude/skills/argos/assets/argos.html`（`pnpm build`）と `.claude/skills/argos/scripts/{save,embed}-fixture.mjs`（`pnpm build:skill`）の 3 つ。**`pnpm build:skill` は HTML を再生成しない**ので、`src/` を触ったら両方走らせること。CI が鮮度を検証して落とすが、生成物を変えたら `.claude-plugin/plugin.json` の `version` も上げること（UI 変更=patch / skill 仕様変更=minor / 互換破壊=major）
+- **`scripts/build-skill.mjs` に bundle エントリを足したのに CI の鮮度チェックのパス一覧を更新しない**。生成物が野放しになる
 - `.gitignore` から `/out/` を消す。Next のビルド出力と同名だが、skill が中間ファイル置き場として使っている
 
 ## 11. 文書索引
@@ -229,7 +239,9 @@ Next の SSR/prerender が無くなったため hydration mismatch そのもの�
 | Plugin manifest | [`.claude-plugin/plugin.json`](./.claude-plugin/plugin.json) | Claude Code plugin として配布する際のメタデータ |
 | Marketplace manifest | [`.claude-plugin/marketplace.json`](./.claude-plugin/marketplace.json) | 自身を plugin として list する marketplace 定義 |
 | ADR 0001 | [`docs/adr/0001-vite-singlefile-html.md`](./docs/adr/0001-vite-singlefile-html.md) | Next static export → Vite + 単一 HTML への移行判断 |
-| Plan | [`docs/plan/vite-singlefile-html.md`](./docs/plan/vite-singlefile-html.md) | 上記移行の Step 分割と実測結果 |
+| ADR 0002 | [`docs/adr/0002-bundle-html-in-plugin.md`](./docs/adr/0002-bundle-html-in-plugin.md) | ビルド済み HTML を plugin に同梱する判断 |
+| ADR 0003 | [`docs/adr/0003-embed-data-in-html.md`](./docs/adr/0003-embed-data-in-html.md) | 議論データを HTML に焼き込む判断・localStorage の扱い |
+| Plan | [`docs/plan/`](./docs/plan/) | 各 ADR に対応する Step 分割と実測結果 |
 
 ADR (`docs/adr/`) / プラン (`docs/plan/`) は発生時に追加する。
 
