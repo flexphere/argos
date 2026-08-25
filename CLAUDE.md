@@ -90,7 +90,7 @@ LLM 推論ロジックを保持する `src/llm/` モジュールは存在しな�
 
 ## 4. 責務分割（Skill ↔ Browser）
 
-- **Claude Code skill (`/argos`)**: Notion 取得 (MCP) → transcript 抽出 → **親セッションが in-context で ExtractionResult / SemanticAnalysisResult を生成** → `scripts/save-fixture.mjs` で zod 検証 + `extractions/<id>.json` 保存 → `scripts/embed-fixture.mjs` で同梱テンプレートに焼き込み `extractions/<id>.html` 生成
+- **Claude Code skill (`/argos`)**: Notion 取得 (MCP) → transcript 抽出 → **親セッションが in-context で ExtractionResult / SemanticAnalysisResult を生成** → `scripts/save-fixture.mjs` で zod 検証 + `extractions/<id>.json` 保存 → `scripts/embed-fixture.mjs` で同梱テンプレートに焼き込み `extractions/<id>.html` 生成（`--open` でデフォルトブラウザ起動）
 - **Browser (argos)**: 静的サイト。焼き込まれたデータを起動時に取り込むか、Import → JSON ファイル経由で読み込み、React Flow に描画。**LLM・API サーバーへの依存なし**
 
 ### 埋め込みデータの規約

@@ -8,12 +8,16 @@
 //   node .claude/skills/argos/scripts/embed-fixture.mjs \
 //     --fixture extractions/<page-id>.json \
 //     --template <CLAUDE_PLUGIN_ROOT>/.claude/skills/argos/assets/argos.html \
-//     --out extractions/<page-id>.html
+//     --out extractions/<page-id>.html \
+//     [--open]
 //
 // 出力した HTML はブラウザで開くだけでグラフが表示される (Import 操作不要)。
+// --open を付けると生成後に OS のデフォルトブラウザで開く。
 // 詳細は docs/adr/0003-embed-data-in-html.md。
 
+import { spawn } from "node:child_process"
 import { readFileSync, writeFileSync } from "node:fs"
+import path from "node:path"
 import { ZodError } from "zod"
 import { EMBEDDED_DATA_ELEMENT_ID, escapeForScriptTag } from "../src/schema/embedded"
 import { extractionResultSchema } from "../src/schema/extraction"
@@ -23,25 +27,62 @@ interface Args {
   fixtureFile: string
   templateFile: string
   outFile: string
+  open: boolean
 }
 
 function parseArgs(): Args {
-  const a: Partial<Args> = {}
+  const a: Partial<Args> = { open: false }
   for (let i = 2; i < process.argv.length; i++) {
     const k = process.argv[i]
     if (k === "--fixture") a.fixtureFile = process.argv[++i]
     else if (k === "--template") a.templateFile = process.argv[++i]
     else if (k === "--out") a.outFile = process.argv[++i]
+    else if (k === "--open") a.open = true
     else {
       console.error(`unknown argument: ${k}`)
       process.exit(1)
     }
   }
   if (!a.fixtureFile || !a.templateFile || !a.outFile) {
-    console.error("Usage: embed-fixture --fixture <path> --template <path> --out <path>")
+    console.error("Usage: embed-fixture --fixture <path> --template <path> --out <path> [--open]")
     process.exit(1)
   }
   return a as Args
+}
+
+/**
+ * 生成した HTML を OS のデフォルトブラウザで開く。
+ *
+ * 開けなくても HTML の生成自体は成功しているので、失敗は警告に留めてパスを案内する。
+ * ヘッドレス環境や CI で握り潰されるのが正しい振る舞い。
+ */
+function openInDefaultBrowser(filePath: string): void {
+  const absolute = path.resolve(filePath)
+  const [command, args] =
+    process.platform === "darwin"
+      ? ["open", [absolute]]
+      : process.platform === "win32"
+        ? // start は cmd の組み込みコマンド。第 1 引数はウィンドウタイトル扱いなので空を渡す
+          ["cmd", ["/c", "start", "", absolute]]
+        : ["xdg-open", [absolute]]
+
+  try {
+    // 親プロセスの終了を待たせない。ブラウザは開きっぱなしになるため
+    const child = spawn(command as string, args as string[], {
+      detached: true,
+      stdio: "ignore",
+    })
+    child.on("error", (e) => {
+      console.error(
+        `⚠ ブラウザを開けませんでした (${e.message})。手動で開いてください: ${absolute}`,
+      )
+    })
+    child.unref()
+  } catch (e) {
+    console.error(
+      `⚠ ブラウザを開けませんでした (${e instanceof Error ? e.message : String(e)})。手動で開いてください: ${absolute}`,
+    )
+  }
 }
 
 /**
@@ -89,7 +130,9 @@ function main(): void {
 
   const template = readFileSync(args.templateFile, "utf8")
 
-  // アプリ本体の script より前にパースされることを保証するため head に置く。
+  // inline の module script は defer 相当で HTML パース完了後に評価されるため、
+  // 埋め込み位置がアプリ本体の script より前か後かは問わない。</head> 直前を選ぶのは
+  // テンプレートの構造が変わっても安定して見つかる挿入点だから。
   const marker = "</head>"
   const at = template.indexOf(marker)
   if (at === -1) {
@@ -111,6 +154,9 @@ function main(): void {
 
   const counts = fixture as { issues?: unknown[]; claims?: unknown[]; arguments?: unknown[] }
   console.error(`✓ embedded: ${args.outFile} (${(html.length / 1024).toFixed(1)} KB)`)
+
+  if (args.open) openInDefaultBrowser(args.outFile)
+
   process.stdout.write(
     `OK out=${args.outFile} issues=${counts.issues?.length ?? 0} claims=${counts.claims?.length ?? 0} arguments=${counts.arguments?.length ?? 0}`,
   )

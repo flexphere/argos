@@ -55,9 +55,9 @@ skill が以下を実行:
 2. **親 Claude Code セッションが in-context で構造化** (LLM 推論はサブスク範囲内、`claude -p` 等のサブプロセス不要)
 3. 任意で分析（論点ズレ / 接続先見直し候補）を同セッションで生成
 4. zod 検証 + cwd 直下の `extractions/<page-id>.json` に保存
-5. plugin 同梱のテンプレートに焼き込んで `extractions/<page-id>.html` を生成
+5. plugin 同梱のテンプレートに焼き込んで `extractions/<page-id>.html` を生成し、**デフォルトブラウザで開く**
 
-**生成された HTML はブラウザで開くだけで議論グラフが表示される。** Import 操作もネットワークも要らず、そのまま人に渡せる。
+**生成された HTML は開くだけで議論グラフが表示される。** Import 操作もネットワークも要らず、そのまま人に渡せる。
 
 JSON も併せて残るので、別の argos に読み込ませたい場合は **Import → JSON ファイルから** で開ける。argos 本体は plugin に同梱されている (`<plugin のインストール先>/.claude/skills/argos/assets/argos.html`)。ホスト版 https://flexphere.github.io/argos/ でも同じものが動く。
 

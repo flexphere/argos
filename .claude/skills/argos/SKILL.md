@@ -139,10 +139,13 @@ stdout 最終行: `OK page_id=<id> issues=<n> claims=<m> arguments=<k> semantic=
 node "${CLAUDE_PLUGIN_ROOT}/.claude/skills/argos/scripts/embed-fixture.mjs" \
   --fixture extractions/<page_id>.json \
   --template "${CLAUDE_PLUGIN_ROOT}/.claude/skills/argos/assets/argos.html" \
-  --out extractions/<page_id>.html
+  --out extractions/<page_id>.html \
+  --open
 ```
 
 plugin 同梱のテンプレートに Step 8 の JSON を焼き込み、**開くだけで議論グラフが表示される単一 HTML** を作る。Import 操作は要らず、ネットワークにも依存しない。そのまま人に渡せる。
+
+`--open` を付けると生成後に OS のデフォルトブラウザで開く。ユーザーがすぐ結果を見られるよう、通常は付けて実行する。ブラウザを開けない環境 (ヘッドレス等) では警告を出すだけで、HTML の生成自体は成功する。
 
 stdout 最終行: `OK out=<path> issues=<n> claims=<m> arguments=<k>`
 
@@ -150,7 +153,7 @@ stdout 最終行: `OK out=<path> issues=<n> claims=<m> arguments=<k>`
 
 ### Step 10: ユーザーへの案内
 
-**基本は Step 9 で生成した HTML を開いてもらう。** ブラウザで開くだけで描画される。
+**Step 9 で `--open` を付けていれば、既にブラウザで開いている。** 開かなかった場合はパスを案内する (`--open` が警告を出していないか確認する)。
 
 JSON を既に開いている argos に読み込ませたい場合は:
 
@@ -180,7 +183,7 @@ Page ID: <page_id>
   - extractions/<page_id>.json   (データ本体・再インポート用)
   - extractions/<page_id>.html   (開くだけで見られる単一 HTML)
 
-extractions/<page_id>.html をブラウザで開いてください。そのまま人に渡せます。
+ブラウザで開きました。そのまま人に渡せます。
 ```
 
 HTML のパスは実パスで提示する。利用者がそのまま開けるようにするため。
