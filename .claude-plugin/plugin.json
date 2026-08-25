@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin.json",
   "name": "argos",
   "displayName": "Argos",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Notion meeting transcripts → IBIS/Toulmin discussion graphs. Produces a self-contained HTML with the discussion baked in — open it and the graph is there.",
   "author": {
     "name": "flexphere",

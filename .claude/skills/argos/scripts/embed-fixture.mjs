@@ -6,7 +6,9 @@ var __export = (target, all) => {
 };
 
 // scripts/embed-fixture.ts
+import { spawn } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
 
 // node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/external.js
 var external_exports = {};
@@ -486,8 +488,8 @@ function getErrorMap() {
 
 // node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/helpers/parseUtil.js
 var makeIssue = (params) => {
-  const { data, path, errorMaps, issueData } = params;
-  const fullPath = [...path, ...issueData.path || []];
+  const { data, path: path2, errorMaps, issueData } = params;
+  const fullPath = [...path2, ...issueData.path || []];
   const fullIssue = {
     ...issueData,
     path: fullPath
@@ -603,11 +605,11 @@ var errorUtil;
 
 // node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/types.js
 var ParseInputLazyPath = class {
-  constructor(parent, value, path, key) {
+  constructor(parent, value, path2, key) {
     this._cachedPath = [];
     this.parent = parent;
     this.data = value;
-    this._path = path;
+    this._path = path2;
     this._key = key;
   }
   get path() {
@@ -4127,22 +4129,46 @@ var semanticAnalysisSchema = external_exports.object({
 
 // scripts/embed-fixture.ts
 function parseArgs() {
-  const a = {};
+  const a = { open: false };
   for (let i = 2; i < process.argv.length; i++) {
     const k = process.argv[i];
     if (k === "--fixture") a.fixtureFile = process.argv[++i];
     else if (k === "--template") a.templateFile = process.argv[++i];
     else if (k === "--out") a.outFile = process.argv[++i];
+    else if (k === "--open") a.open = true;
     else {
       console.error(`unknown argument: ${k}`);
       process.exit(1);
     }
   }
   if (!a.fixtureFile || !a.templateFile || !a.outFile) {
-    console.error("Usage: embed-fixture --fixture <path> --template <path> --out <path>");
+    console.error("Usage: embed-fixture --fixture <path> --template <path> --out <path> [--open]");
     process.exit(1);
   }
   return a;
+}
+function openInDefaultBrowser(filePath) {
+  const absolute = path.resolve(filePath);
+  const [command, args] = process.platform === "darwin" ? ["open", [absolute]] : process.platform === "win32" ? (
+    // start は cmd の組み込みコマンド。第 1 引数はウィンドウタイトル扱いなので空を渡す
+    ["cmd", ["/c", "start", "", absolute]]
+  ) : ["xdg-open", [absolute]];
+  try {
+    const child = spawn(command, args, {
+      detached: true,
+      stdio: "ignore"
+    });
+    child.on("error", (e) => {
+      console.error(
+        `\u26A0 \u30D6\u30E9\u30A6\u30B6\u3092\u958B\u3051\u307E\u305B\u3093\u3067\u3057\u305F (${e.message})\u3002\u624B\u52D5\u3067\u958B\u3044\u3066\u304F\u3060\u3055\u3044: ${absolute}`
+      );
+    });
+    child.unref();
+  } catch (e) {
+    console.error(
+      `\u26A0 \u30D6\u30E9\u30A6\u30B6\u3092\u958B\u3051\u307E\u305B\u3093\u3067\u3057\u305F (${e instanceof Error ? e.message : String(e)})\u3002\u624B\u52D5\u3067\u958B\u3044\u3066\u304F\u3060\u3055\u3044: ${absolute}`
+    );
+  }
 }
 function validateFixture(raw) {
   try {
@@ -4196,6 +4222,7 @@ ${e instanceof Error ? e.message : String(e)}`
   writeFileSync(args.outFile, html, "utf8");
   const counts = fixture;
   console.error(`\u2713 embedded: ${args.outFile} (${(html.length / 1024).toFixed(1)} KB)`);
+  if (args.open) openInDefaultBrowser(args.outFile);
   process.stdout.write(
     `OK out=${args.outFile} issues=${counts.issues?.length ?? 0} claims=${counts.claims?.length ?? 0} arguments=${counts.arguments?.length ?? 0}`
   );
